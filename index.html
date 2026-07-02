@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NBK Entrance Test - Online Quiz v4</title>
+<title>NBK Entrance Test - Online Quiz v5</title>
 <style>
 :root{--bg:#f5f7fb;--card:#fff;--ink:#17202a;--muted:#5f6b7a;--line:#d8dee9;--accent:#2356d8;--good:#157347;--bad:#b02a37;--warn:#d97706;}
 *{box-sizing:border-box} body{font-family:Arial,Helvetica,sans-serif;margin:0;background:var(--bg);color:var(--ink);line-height:1.45} header{background:#0b3a82;color:white;padding:16px 22px;position:sticky;top:0;z-index:3;box-shadow:0 2px 8px #0002} header h1{margin:0;font-size:20px} .sub{font-size:13px;opacity:.9;margin-top:3px}.wrap{max-width:1040px;margin:0 auto;padding:18px}.panel,.q,.sectionIntro{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin:14px 0;box-shadow:0 1px 4px #0000000b}.panel{display:grid;gap:12px}.row{display:flex;gap:12px;flex-wrap:wrap}.row label{display:grid;gap:4px;font-weight:600;flex:1;min-width:220px}.row input{padding:10px;border:1px solid var(--line);border-radius:8px;font-size:15px}.timer{font-weight:700;color:#fff;background:#123d70;padding:8px 12px;border-radius:8px;display:inline-block;margin-top:8px}.btn{border:0;border-radius:9px;padding:10px 14px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff}.btn.secondary{background:#6b7280}.btn.good{background:var(--good)}.btn.warn{background:var(--warn)}.sectionIntro{white-space:pre-wrap;background:#eef4ff;border-color:#b7ccff}.q h3{margin:0 0 10px;font-size:17px}.prompt{white-space:pre-wrap;margin:10px 0 12px}.options label{display:block;margin:8px 0;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:#fff}.options input{margin-right:8px} select,.fill,textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;font-size:15px;background:white} textarea{min-height:210px;resize:vertical}.meta{color:var(--muted);font-size:13px}.resultBox{background:#fff;border:2px solid var(--accent);border-radius:12px;padding:16px;margin:18px 0}.correct{border-color:#9ad3ad;background:#f0fff4}.wrong{border-color:#f1a0a8;background:#fff5f5}.hide{display:none}.stickyTools{position:sticky;bottom:0;background:#ffffffea;border-top:1px solid var(--line);padding:12px;display:flex;gap:10px;flex-wrap:wrap;backdrop-filter:blur(5px);z-index:2}.small{font-size:13px;color:var(--muted)}.answerNote{font-size:13px;margin-top:8px}.answerNote.good{color:var(--good)}.answerNote.bad{color:var(--bad)}.progress{height:10px;background:#e5e7eb;border-radius:50px;overflow:hidden}.bar{height:100%;width:0;background:var(--accent)}details{background:#fff;border:1px dashed var(--line);padding:8px 10px;border-radius:8px;margin:8px 0}.printOnly{display:none}@media print{header,.panel,.stickyTools,.btn{display:none!important}.wrap{padding:0}.q,.sectionIntro{break-inside:avoid;box-shadow:none}.printOnly{display:block}}
@@ -73,8 +73,47 @@ function getAnswer(q){ if(q.type==='fill') return document.getElementById('q'+q.
 function isCorrect(q, val){ if(q.type==='fill'){return (q.answers||[]).map(normalize).includes(normalize(val))} return val === q.answer }
 function saveState(){ const state={name:studentName.value, klass:studentClass.value, startTime, submitted, answers:{}, writing:document.getElementById('writingText')?.value||''}; exam.questions.forEach(q=>state.answers[q.id]=getAnswer(q)); localStorage.setItem('nbk_quiz_state_v4', JSON.stringify(state)); updateProgress(); }
 function loadState(){ try{const s=JSON.parse(localStorage.getItem('nbk_quiz_state_v4')||'{}'); if(s.name) studentName.value=s.name; if(s.klass) studentClass.value=s.klass; if(s.startTime) startTime=s.startTime; submitted=!!s.submitted; setTimeout(()=>{if(s.answers){for(const q of exam.questions){const val=s.answers[q.id]||''; if(q.type==='fill'||q.type==='select'){const inp=document.getElementById('q'+q.id); if(inp) inp.value=val} else if(q.type==='mc'){const r=document.querySelector(`input[name="q${q.id}"][value="${val}"]`); if(r) r.checked=true}}} if(s.writing){const w=document.getElementById('writingText'); if(w) w.value=s.writing} updateProgress();},0)}catch(e){} }
-function render(){ const root=document.getElementById('exam'); let current=''; exam.questions.forEach(q=>{ if(q.section!==current){current=q.section; root.append(el('div',{class:'sectionIntro'},current));} const card=el('div',{class:'q',id:'card'+q.id}); card.append(el('h3',{},'Question '+q.id)); card.append(el('div',{class:'prompt'},q.prompt)); if(q.type==='fill'){ const inp=el('input',{class:'fill',id:'q'+q.id,placeholder:'Type your answer here'}); inp.addEventListener('input',saveState); card.append(inp); } else if(q.type==='mc'){ const opts=el('div',{class:'options'}); q.options.forEach(o=>{ const id='q'+q.id+'_'+o.key; const lab=el('label',{}, el('input',{type:'radio',name:'q'+q.id,value:o.key,id}), `${o.key}. ${o.text}`); lab.querySelector('input').addEventListener('change',saveState); opts.append(lab); }); card.append(opts); } else if(q.type==='select'){ const sel=el('select',{id:'q'+q.id}); sel.append(el('option',{value:''},'-- Choose --')); q.options.forEach(o=>sel.append(el('option',{value:o.key},o.key))); sel.addEventListener('change',saveState); card.append(sel); } card.append(el('div',{class:'answerNote hide',id:'note'+q.id})); root.append(card); });
- const wr=document.getElementById('writing'); wr.append(el('div',{class:'sectionIntro'},exam.writing.prompt)); const textarea=el('textarea',{id:'writingText',placeholder:'Write your email here...'}); textarea.addEventListener('input',saveState); wr.append(el('div',{class:'q'},el('h3',{},'Writing'),textarea,el('div',{class:'small'},'Phần Writing không tự chấm điểm. GV đọc và chấm riêng.'))); }
+function isDuplicateQuestionPrompt(q){
+  return new RegExp('^\\s*Question\\s+' + q.id + '\\.?\\s*$', 'i').test(q.prompt || '');
+}
+function render(){
+  const root=document.getElementById('exam');
+  root.innerHTML='';
+  let current='';
+  exam.questions.forEach(q=>{
+    if(q.section!==current){current=q.section; root.append(el('div',{class:'sectionIntro'},current));}
+    const card=el('div',{class:'q',id:'card'+q.id});
+    card.append(el('h3',{},'Question '+q.id));
+    if(q.prompt && !isDuplicateQuestionPrompt(q)){
+      card.append(el('div',{class:'prompt'},q.prompt));
+    }
+    if(q.type==='fill'){
+      const inp=el('input',{class:'fill',id:'q'+q.id,placeholder:'Type your answer here'});
+      inp.addEventListener('input',saveState); card.append(inp);
+    } else if(q.type==='mc'){
+      const opts=el('div',{class:'options'});
+      q.options.forEach(o=>{
+        const id='q'+q.id+'_'+o.key;
+        const lab=el('label',{}, el('input',{type:'radio',name:'q'+q.id,value:o.key,id}), `${o.key}. ${o.text}`);
+        lab.querySelector('input').addEventListener('change',saveState); opts.append(lab);
+      });
+      card.append(opts);
+    } else if(q.type==='select'){
+      const sel=el('select',{id:'q'+q.id});
+      sel.append(el('option',{value:''},'-- Choose --'));
+      q.options.forEach(o=>sel.append(el('option',{value:o.key},o.key)));
+      sel.addEventListener('change',saveState); card.append(sel);
+    }
+    card.append(el('div',{class:'answerNote hide',id:'note'+q.id}));
+    root.append(card);
+  });
+  const wr=document.getElementById('writing');
+  wr.innerHTML='';
+  wr.append(el('div',{class:'sectionIntro'},exam.writing.prompt));
+  const textarea=el('textarea',{id:'writingText',placeholder:'Write your email here...'});
+  textarea.addEventListener('input',saveState);
+  wr.append(el('div',{class:'q'},el('h3',{},'Writing'),textarea,el('div',{class:'small'},'Phần Writing không tự chấm điểm. GV đọc và chấm riêng.')));
+}
 function updateProgress(){ let done=0; exam.questions.forEach(q=>{ if(getAnswer(q)) done++; }); const total=exam.questions.length; document.getElementById('answeredCount').textContent=`Đã làm ${done}/${total} câu`; document.getElementById('bar').style.width=(done/total*100)+'%'; }
 function startTimer(){
   if(submitted){ alert('Bài đã được nộp trên thiết bị này. Không thể làm lại.'); return; }
